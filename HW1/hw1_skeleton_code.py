@@ -73,6 +73,10 @@ def compute_square_loss_gradient(X, y, theta):
         grad - gradient vector, 1D numpy array of size (num_features)
     """
     #TODO
+    theta_matrix = np.matrix(theta)
+    h_theta = theta_matrix * X.T
+    loss_gradient = np.sum(np.subtract(h_theta,np.matrix(y))*X)/X.shape[0]
+    print loss_gradient
     
        
         
@@ -256,6 +260,7 @@ def main():
     X_test = np.hstack((X_test, np.ones((X_test.shape[0], 1)))) # Add bias term
     
     loss = compute_square_loss(X_train,y_train,np.ones((1,X_train.shape[1])))
+    loss_gradient = compute_square_loss_gradient(X_train,y_train,np.ones((1,X_train.shape[1])))
     # TODO
 
 if __name__ == "__main__":
