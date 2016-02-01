@@ -25,7 +25,15 @@ def feature_normalization(train, test):
 
     """
     # TODO
+    train_min = np.amin(train,axis = 0)
+    train_X = np.subtract(train,train_min)
+    train_range = np.amax(train_X,axis = 0)
+    train_rescaled = train_X/train_range
 
+    test_X = np.subtract(test,train_min)
+    test_rescaled = test_X/train_range
+
+    return train_rescaled, test_rescaled
 
 ########################################
 ####Q2.2a: The square loss function
@@ -43,9 +51,12 @@ def compute_square_loss(X, y, theta):
         loss - the square loss, scalar
     """
     loss = 0 #initialize the square_loss
+   
     #TODO
-    
-
+    theta_matrix = np.matrix(theta)
+    h_theta = theta_matrix * X.T
+    loss = np.sum(np.power(np.subtract(h_theta, np.matrix(y)),2))/2*X.shape[0]
+    return loss
 
 ########################################
 ###Q2.2b: compute the gradient of square loss function
@@ -238,12 +249,13 @@ def main():
 
     print('Split into Train and Test')
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size =100, random_state=10)
-
+    
     print("Scaling all to [0, 1]")
     X_train, X_test = feature_normalization(X_train, X_test)
     X_train = np.hstack((X_train, np.ones((X_train.shape[0], 1))))  # Add bias term
     X_test = np.hstack((X_test, np.ones((X_test.shape[0], 1)))) # Add bias term
-
+    
+    loss = compute_square_loss(X_train,y_train,np.ones((1,X_train.shape[1])))
     # TODO
 
 if __name__ == "__main__":
