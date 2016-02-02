@@ -74,6 +74,11 @@ def compute_square_loss_gradient(X, y, theta):
     #TODO
     h_theta = np.dot(X,theta)
     loss_gradient = np.dot(np.subtract(h_theta,y),X)/X.shape[0]
+    print loss_gradient
+
+    m = X.shape[0]
+    loss_gradient = ((X.T).dot(X.dot(theta)-y))/m
+    print loss_gradient
     return loss_gradient
     
        
@@ -123,11 +128,15 @@ def grad_checker(X, y, theta, epsilon=0.01, tolerance=1e-4):
     directional_change = epsilon * basis_vectors
     new_theta_fwd = theta + directional_change
     new_theta_bwd = theta - directional_change
+
     j_theta_fwd = np.sum(np.power(np.subtract(np.dot(X,new_theta_fwd).T,y).T,2),axis=0)/(2*X.shape[0])
     j_theta_bwd = np.sum(np.power(np.subtract(np.dot(X,new_theta_bwd).T,y).T,2),axis=0)/(2*X.shape[0])
+
     approx_grad = np.subtract(j_theta_fwd,j_theta_bwd)/(2*epsilon)
+    print "approximate_gradient ",approx_grad
+    print "true gradient ", true_gradient
     eucledian_dist = np.linalg.norm(approx_grad-true_gradient)
-    print " distance   " , eucledian_dist
+    print " distance   " , eucledian_dist 
     if (eucledian_dist <= tolerance):
         return True
     else:
@@ -166,9 +175,10 @@ def batch_grad_descent(X, y, alpha=0.1, num_iter=1000, check_gradient=False):
     num_instances, num_features = X.shape[0], X.shape[1]
     theta_hist = np.zeros((num_iter+1, num_features))  #Initialize theta_hist
     loss_hist = np.zeros(num_iter+1) #initialize loss_hist
-    theta = np.ones(num_features) #initialize theta
+    theta = np.ones(num_features)/49 #initialize theta
     #TODO
     for i in range(num_iter):
+        print theta
         theta_hist[i] = theta
         loss_hist[i] = compute_square_loss(X,y,theta)
 
@@ -286,8 +296,14 @@ def main():
     
     loss = compute_square_loss(X_train,y_train,np.ones(X_train.shape[1]))
     loss_gradient = compute_square_loss_gradient(X_train,y_train,np.ones(X_train.shape[1]))
-   # grad_check = grad_checker(X_train,y_train,np.zeros(X_train.shape[1]))
-    batch_grad_descent(X_train,y_train)    
+
+    theta = np.random.randn(49)
+    theta = theta/np.sum(theta)
+    grad_check = grad_checker(X_train,y_train,theta)
+    
+    #theta_hist, loss_hist = batch_grad_descent(X_train,y_train)    
+    #print loss_hist
+    #np.save('loss_hist.npy', loss_hist)
     # TODO
 
 if __name__ == "__main__":
