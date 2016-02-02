@@ -53,9 +53,8 @@ def compute_square_loss(X, y, theta):
     loss = 0 #initialize the square_loss
    
     #TODO
-    theta_matrix = np.matrix(theta)
-    h_theta = theta_matrix * X.T
-    loss = np.sum(np.power(np.subtract(h_theta, np.matrix(y)),2))/2*X.shape[0]
+    h_theta = np.dot(X,theta)
+    loss = np.dot(np.power(np.subtract(h_theta, y),2),np.ones(X.shape[0]))/(2*X.shape[0])
     return loss
 
 ########################################
@@ -73,10 +72,9 @@ def compute_square_loss_gradient(X, y, theta):
         grad - gradient vector, 1D numpy array of size (num_features)
     """
     #TODO
-    theta_matrix = np.matrix(theta)
-    h_theta = theta_matrix * X.T
-    loss_gradient = np.sum(np.subtract(h_theta,np.matrix(y))*X)/X.shape[0]
-    print loss_gradient
+    h_theta = np.dot(X,theta)
+    loss_gradient = np.dot(np.subtract(h_theta,y),X)/X.shape[0]
+    return loss_gradient
     
        
         
@@ -121,7 +119,20 @@ def grad_checker(X, y, theta, epsilon=0.01, tolerance=1e-4):
     num_features = theta.shape[0]
     approx_grad = np.zeros(num_features) #Initialize the gradient we approximate
     #TODO
-    
+    basis_vectors = np.identity(X.shape[1])
+    directional_change = epsilon * basis_vectors
+    new_theta_fwd = theta + directional_change
+    new_theta_bwd = theta - directional_change
+    #j_theta_fwd = np.sum(np.power(np.subtract(np.dot(new_theta_fwd,X),y),2),axis=0)
+    j_theta_fwd = np.sum(np.power(np.subtract(np.dot(X,new_theta_fwd).T,y).T,2),axis=0)/(2*X.shape[0])
+    j_theta_bwd = np.sum(np.power(np.subtract(np.dot(X,new_theta_bwd).T,y).T,2),axis=0)/(2*X.shape[0])
+    approx_grad = np.subtract(j_theta_fwd,j_theta_bwd)/(2*epsilon)
+    eucledian_dist = np.linalg.norm(approx_grad-true_gradient)
+    if (eucledian_dist < tolerance):
+        return True
+    else:
+        return False
+
 #################################################
 ###Q2.3b: Generic Gradient Checker
 def generic_gradient_checker(X, y, theta, objective_func, gradient_func, epsilon=0.01, tolerance=1e-4):
@@ -259,8 +270,10 @@ def main():
     X_train = np.hstack((X_train, np.ones((X_train.shape[0], 1))))  # Add bias term
     X_test = np.hstack((X_test, np.ones((X_test.shape[0], 1)))) # Add bias term
     
-    loss = compute_square_loss(X_train,y_train,np.ones((1,X_train.shape[1])))
-    loss_gradient = compute_square_loss_gradient(X_train,y_train,np.ones((1,X_train.shape[1])))
+    loss = compute_square_loss(X_train,y_train,np.ones(X_train.shape[1]))
+    loss_gradient = compute_square_loss_gradient(X_train,y_train,np.ones(X_train.shape[1]))
+    grad_check = grad_checker(X_train,y_train,np.ones(X_train.shape[1]))
+    print grad_check
     # TODO
 
 if __name__ == "__main__":
