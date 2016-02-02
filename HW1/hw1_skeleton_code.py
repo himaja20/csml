@@ -123,12 +123,12 @@ def grad_checker(X, y, theta, epsilon=0.01, tolerance=1e-4):
     directional_change = epsilon * basis_vectors
     new_theta_fwd = theta + directional_change
     new_theta_bwd = theta - directional_change
-    #j_theta_fwd = np.sum(np.power(np.subtract(np.dot(new_theta_fwd,X),y),2),axis=0)
     j_theta_fwd = np.sum(np.power(np.subtract(np.dot(X,new_theta_fwd).T,y).T,2),axis=0)/(2*X.shape[0])
     j_theta_bwd = np.sum(np.power(np.subtract(np.dot(X,new_theta_bwd).T,y).T,2),axis=0)/(2*X.shape[0])
     approx_grad = np.subtract(j_theta_fwd,j_theta_bwd)/(2*epsilon)
     eucledian_dist = np.linalg.norm(approx_grad-true_gradient)
-    if (eucledian_dist < tolerance):
+    print " distance   " , eucledian_dist
+    if (eucledian_dist <= tolerance):
         return True
     else:
         return False
@@ -168,6 +168,20 @@ def batch_grad_descent(X, y, alpha=0.1, num_iter=1000, check_gradient=False):
     loss_hist = np.zeros(num_iter+1) #initialize loss_hist
     theta = np.ones(num_features) #initialize theta
     #TODO
+    for i in range(num_iter):
+        theta_hist[i] = theta
+        loss_hist[i] = compute_square_loss(X,y,theta)
+
+        gradient = compute_square_loss_gradient(X,y,theta)
+        theta = theta - (alpha * gradient)
+
+        if not grad_checker(X, y, theta):
+            print "grad check failed  " , i
+            return theta_hist, loss_hist
+
+    print theta_hist.shape
+    print loss_hist.shape
+    return theta_hist, loss_hist
 
 ####################################
 ###Q2.4b: Implement backtracking line search in batch_gradient_descent
@@ -272,8 +286,8 @@ def main():
     
     loss = compute_square_loss(X_train,y_train,np.ones(X_train.shape[1]))
     loss_gradient = compute_square_loss_gradient(X_train,y_train,np.ones(X_train.shape[1]))
-    grad_check = grad_checker(X_train,y_train,np.ones(X_train.shape[1]))
-    print grad_check
+   # grad_check = grad_checker(X_train,y_train,np.zeros(X_train.shape[1]))
+    batch_grad_descent(X_train,y_train)    
     # TODO
 
 if __name__ == "__main__":
