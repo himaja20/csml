@@ -286,7 +286,21 @@ def stochastic_grad_descent(X, y, alpha=0.1, lambda_reg=1, num_iter=1000):
     theta_hist = np.zeros((num_iter, num_instances, num_features))  #Initialize theta_hist
     loss_hist = np.zeros((num_iter, num_instances)) #Initialize loss_hist
     #TODO
+    
+    permutation = np.random.permutation(X.shape[0])
+    
+    X_shuffled = X[permutation]
+    y_shuffled = y[permutation]
+    
+    for i in range(num_iter):
+        for j in range(num_instances):
+            theta_hist[i,j] = theta
+            loss_hist[i,j] = np.power(np.subtract(np.dot(X_shuffled[j],theta),y_shuffled[j]),2)/2 + lambda_reg*(np.dot(theta.T,theta))
 
+            gradient = np.dot(np.subtract(np.dot(theta,X_shuffled[j]),y_shuffled[j]),X_shuffled[j]) + 2*lambda_reg*theta
+            theta = theta - (alpha * gradient)
+        
+    return theta_hist,loss_hist
 ################################################
 ###Q2.6b Visualization that compares the convergence speed of batch
 ###and stochastic gradient descent for various approaches to step_size
@@ -318,9 +332,10 @@ def main():
     
     theta_hist, loss_hist = batch_grad_descent(X_train,y_train)
     theta_hist, loss_hist = regularized_grad_descent(X_train,y_train)
-
-    print theta_hist
-    print loss_hist
+    theta_hist_sgd, loss_hist_sgd = stochastic_grad_descent(X_train,y_train)
+    
+    #print theta_hist_sgd
+    print loss_hist_sgd
 
 if __name__ == "__main__":
     main()
