@@ -2,6 +2,8 @@ import pandas as pd
 import logging
 import numpy as np
 import sys
+import math
+import time
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -191,7 +193,7 @@ def batch_grad_descent(X, y, alpha, num_iter=1000, check_gradient=False):
 
         if not grad_checker(X, y, theta):
             print "grad check failed  " , i
-            return theta_hist, loss_hist
+            #return theta_hist, loss_hist
 
      
     loss_plot = plt.plot(loss_hist)
@@ -251,14 +253,20 @@ def regularized_grad_descent(X, y, alpha, lambda_reg, num_iter=1000):
     theta_hist = np.zeros((num_iter+1, num_features))  #Initialize theta_hist
     loss_hist = np.zeros(num_iter+1) #Initialize loss_hist
     #TODO
-
+    
+    time_elapsed = np.zeros(num_iter)
     for i in range(num_iter):
         theta_hist[i] = theta
         loss_hist[i] = compute_regularized_square_loss(X,y,theta,lambda_reg)
 
         gradient = compute_regularized_square_loss_gradient(X,y,theta,lambda_reg)
+        time_start = time.clock()
         theta = theta - (alpha * gradient)
+        time_end = time.clock()
+        time_elapsed[i] = time_end = time_start
 
+    time_gradient_step = np.average(time_elapsed)
+    print time_gradient_step
     return theta_hist,loss_hist
 
 
@@ -298,7 +306,7 @@ def visualize_bgd(X_train, X_test, y_train, y_test):
 
 #############################################
 ###Q2.6a: Stochastic Gradient Descent
-def stochastic_grad_descent(X, y, alpha=0.01, lambda_reg=1, num_iter=100):
+def stochastic_grad_descent(X, y, alpha, lambda_reg=0.01, num_iter=100):
     """
     In this question you will implement stochastic gradient descent with a regularization term
     
@@ -319,27 +327,63 @@ def stochastic_grad_descent(X, y, alpha=0.01, lambda_reg=1, num_iter=100):
     """
     num_instances, num_features = X.shape[0], X.shape[1]
     theta = np.ones(num_features) #Initialize theta
+    name = alpha
+    name_t = alpha
+    time_elapsed = np.zeros(num_iter+1)
+    mean = np.zeros(3)
+    std = np.zeros(3)
+    k = 0
     
-    
-    theta_hist = np.zeros((num_iter, num_instances, num_features))  #Initialize theta_hist
-    loss_hist = np.zeros((num_iter, num_instances)) #Initialize loss_hist
+    theta_hist = np.zeros((num_iter+1, num_instances, num_features))  #Initialize theta_hist
+    loss_hist = np.zeros((num_iter+1, num_instances)) #Initialize loss_hist
     #TODO
-    
-    for i in range(num_iter):
+    for i in range(num_iter + 1):
              
         permutation = np.random.permutation(X.shape[0])
         X_shuffled = X[permutation]
         y_shuffled = y[permutation]
-
-        alpha = 0.01 / (i+1)
         
+        if (name == "t"):
+            alpha = 0.01/float(i+1)
+            name_t = "1/t"
+        elif (name == "sqrt"):
+            alpha = 0.01/math.sqrt(i+1)
+            name_t = "1/sqrt(t)"
+        
+        time_start = time.clock()   
         for j in range(num_instances):
             theta_hist[i,j] = theta
             loss_hist[i,j] = np.power(np.subtract(np.dot(X_shuffled[j],theta),y_shuffled[j]),2) + lambda_reg*(np.dot(theta.T,theta))
 
             gradient = np.dot(np.subtract(np.dot(theta,X_shuffled[j]),y_shuffled[j]),X_shuffled[j]) + 2*lambda_reg*theta
             theta = theta - (alpha * gradient)
+        
+        time_end = time.clock()
+        
+        time_elapsed[i] = time_end - time_start
+        
+        if (i % 50 == 0):
+            filename = 'loss_step_' + str(name) + '.png'
+            log_loss = np.log(loss_hist[i])
+            mean[k] = np.average(loss_hist[i])
+            std[k] = np.std(loss_hist[i])
+            k = k + 1
+            plt.plot(log_loss,label='loss at epoch ' + str(i))
+            legend = plt.legend(loc='upper center', shadow=True, fontsize='large')
+            legend.get_frame().set_facecolor('#00FFCC')
+            plt.title('Loss as a function of number of steps in each epoch with step size = ' + str(name_t))
+            plt.xlabel('step number')
+            plt.ylabel('Log Loss')
+
+            plt.savefig(filename)
     
+    avg_time_epoch = np.average(time_elapsed)
+    print avg_time_epoch
+    print mean
+    print std
+    min_theta = theta_hist[np.argmin(loss_hist)/loss_hist.shape[1],np.argmin(loss_hist)%loss_hist.shape[1]]
+    print min_theta
+
     return theta_hist,loss_hist
 ################################################
 ###Q2.6b Visualization that compares the convergence speed of batch
@@ -369,15 +413,15 @@ def main():
 
     grad_check = grad_checker(X_train,y_train,np.ones(X_train.shape[1]))
     
-    visualize_bgd(X_train, X_test, y_train, y_test)
-    #theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.01)
-    #theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.05)
-    #theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.1)
-    #theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.5)    
-    
-    #theta_hist, loss_hist = regularized_grad_descent(X_train,y_train,0.1,10**-7)
-    
-    #theta_hist_sgd, loss_hist_sgd = stochastic_grad_descent(X_train,y_train)
+    #visualize_bgd(X_train, X_test, y_train, y_test)
+    """
+    theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.01)
+    theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.05)
+    theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.1)
+    theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.5)    
+    """
+    #theta_hist, loss_hist = regularized_grad_descent(X_train,y_train,0.1,0.01)
+    theta_hist_sgd, loss_hist_sgd = stochastic_grad_descent(X_train,y_train,0.05)
     #print theta_hist_sgd, loss_hist_sgd 
 
     #print theta_hist_sgd
