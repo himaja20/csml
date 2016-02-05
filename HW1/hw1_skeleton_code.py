@@ -208,6 +208,9 @@ def batch_grad_descent(X, y, alpha, num_iter=1000, check_gradient=False):
 #TODO
     
 
+def compute_regularized_square_loss(X, y, theta, lambda_reg):
+    return compute_square_loss(X,y,theta) + lambda_reg*(np.dot(theta.T,theta))
+ 
 
 ###################################################
 ###Q2.5a: Compute the gradient of Regularized Batch Gradient Descent
@@ -259,49 +262,43 @@ def regularized_grad_descent(X, y, alpha, lambda_reg, num_iter=1000):
     return theta_hist,loss_hist
 
 
-def compute_regularized_square_loss(X, y, theta, lambda_reg):
-    return compute_square_loss(X,y,theta) + lambda_reg*(np.dot(theta.T,theta))
-    
+   
    
 #############################################
 ##Q2.5c: Visualization of Regularized Batch Gradient Descent
 ##X-axis: log(lambda_reg)
 ##Y-axis: square_loss
  
-def vis_bgd(X_train, X_test, y_train, y_test):
+def visualize_bgd(X_train, X_test, y_train, y_test):
         
-    lambda_range = np.arange(1,5,1)
+    lambda_range = np.array([10**-9,10**-8,10**-7,10**-6,10**-5,10**-4,10**-3,10**-2,10**-1,1,10])
+    lambda_logs = np.log(lambda_range)
     square_loss_train = np.zeros(lambda_range.shape[0])
     square_loss_test = np.zeros(lambda_range.shape[0])
     k = 0
 
     for i in lambda_range:
-        train_theta,train_loss = regularized_grad_descent(X_train,y_train,0.1,i)
-        test_theta,test_loss = regularized_grad_descent(X_test,y_test,0.1,i)
         
-        min_loss_index_train = np.argmin(train_loss)
-        min_loss_theta_train = train_theta[min_loss_index_train]
-        print min_loss_theta_train
-       
-        """
-        min_loss_index_test = np.argmin(test_loss)
-        min_loss_theta_test = test_theta[min_loss_index_test]
-        print min_loss_index_test
-        """
-        square_loss_train[k] =compute_square_loss(X_train,y_train,min_loss_theta_train)
-        #square_loss_test[k] = compute_square_loss(X_test,y_test,min_loss_theta_test)
+        train_theta,train_loss = regularized_grad_descent(X_train,y_train,0.01,i)
+        test_theta,test_loss = regularized_grad_descent(X_test,y_test,0.01,i)
+        
+        square_loss_train[k] =compute_square_loss(X_train,y_train,train_theta[X_train.shape[0]-1])
+        square_loss_test[k] = compute_square_loss(X_test,y_test,test_theta[X_test.shape[0]-1])
 
         k = k + 1
-
-    print square_loss_train
-    print square_loss_test
-
-        
-
+    
+    plt.plot(lambda_logs,square_loss_train,'r',label = 'Training Loss')
+    plt.plot(lambda_logs,square_loss_test,'g',label = 'Test Loss')
+    legend = plt.legend(loc='upper center', shadow=True, fontsize='large')
+    legend.get_frame().set_facecolor('#00FFCC')
+    plt.title('square loss as a function of lambda')
+    plt.xlabel('log(lambda)')
+    plt.ylabel('square_loss')
+    plt.savefig('lamba_loss_plot.png')
 
 #############################################
 ###Q2.6a: Stochastic Gradient Descent
-def stochastic_grad_descent(X, y, alpha=0.1, lambda_reg=1, num_iter=1000):
+def stochastic_grad_descent(X, y, alpha=0.01, lambda_reg=1, num_iter=100):
     """
     In this question you will implement stochastic gradient descent with a regularization term
     
@@ -328,19 +325,21 @@ def stochastic_grad_descent(X, y, alpha=0.1, lambda_reg=1, num_iter=1000):
     loss_hist = np.zeros((num_iter, num_instances)) #Initialize loss_hist
     #TODO
     
-    permutation = np.random.permutation(X.shape[0])
-    
-    X_shuffled = X[permutation]
-    y_shuffled = y[permutation]
-    
     for i in range(num_iter):
+             
+        permutation = np.random.permutation(X.shape[0])
+        X_shuffled = X[permutation]
+        y_shuffled = y[permutation]
+
+        alpha = 0.01 / (i+1)
+        
         for j in range(num_instances):
             theta_hist[i,j] = theta
             loss_hist[i,j] = np.power(np.subtract(np.dot(X_shuffled[j],theta),y_shuffled[j]),2) + lambda_reg*(np.dot(theta.T,theta))
 
             gradient = np.dot(np.subtract(np.dot(theta,X_shuffled[j]),y_shuffled[j]),X_shuffled[j]) + 2*lambda_reg*theta
             theta = theta - (alpha * gradient)
-        
+    
     return theta_hist,loss_hist
 ################################################
 ###Q2.6b Visualization that compares the convergence speed of batch
@@ -369,18 +368,18 @@ def main():
     loss_gradient = compute_square_loss_gradient(X_train,y_train,np.ones(X_train.shape[1]))
 
     grad_check = grad_checker(X_train,y_train,np.ones(X_train.shape[1]))
-    print grad_check
     
-    vis_bgd(X_train, X_test, y_train, y_test)
+    visualize_bgd(X_train, X_test, y_train, y_test)
     #theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.01)
     #theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.05)
     #theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.1)
     #theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.5)    
     
-    #theta_hist, loss_hist = regularized_grad_descent(X_train,y_train)
+    #theta_hist, loss_hist = regularized_grad_descent(X_train,y_train,0.1,10**-7)
     
     #theta_hist_sgd, loss_hist_sgd = stochastic_grad_descent(X_train,y_train)
-    
+    #print theta_hist_sgd, loss_hist_sgd 
+
     #print theta_hist_sgd
     #print loss_hist_sgd
 
