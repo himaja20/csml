@@ -208,7 +208,21 @@ def batch_grad_descent(X, y, alpha, num_iter=1000, check_gradient=False):
 ###Q2.4b: Implement backtracking line search in batch_gradient_descent
 ###Check http://en.wikipedia.org/wiki/Backtracking_line_search for details
 #TODO
-    
+def backtracking_line_search(X,y,theta):
+    sigma = 0.01
+    beta = 0.5
+    k = 0
+    alpha = 1 #step_size
+    while(True):
+        gradient = compute_square_loss_gradient(X,y,theta)
+        theta_next = theta - alpha * gradient
+        if (compute_square_loss(X,y,theta) - compute_square_loss(X,y,theta_next) >= sigma * alpha * np.dot(gradient.T,gradient)):
+            break
+        else:
+            alpha = beta * alpha
+            theta = theta_next
+            k = k+1
+    print alpha
 
 def compute_regularized_square_loss(X, y, theta, lambda_reg):
     return compute_square_loss(X,y,theta) + lambda_reg*(np.dot(theta.T,theta))
@@ -235,7 +249,7 @@ def compute_regularized_square_loss_gradient(X, y, theta, lambda_reg):
 
 ###################################################
 ###Q2.5b: Batch Gradient Descent with regularization term
-def regularized_grad_descent(X, y, alpha, lambda_reg, num_iter=1000):
+def regularized_grad_descent(X, y, alpha, lambda_reg, num_iter=100):
     """
     Args:
         X - the feature vector, 2D numpy array of size (num_instances, num_features)
@@ -266,7 +280,7 @@ def regularized_grad_descent(X, y, alpha, lambda_reg, num_iter=1000):
         time_elapsed[i] = time_end = time_start
 
     time_gradient_step = np.average(time_elapsed)
-    print time_gradient_step
+    #print time_gradient_step
     return theta_hist,loss_hist
 
 
@@ -279,7 +293,13 @@ def regularized_grad_descent(X, y, alpha, lambda_reg, num_iter=1000):
  
 def visualize_bgd(X_train, X_test, y_train, y_test):
         
-    lambda_range = np.array([10**-9,10**-8,10**-7,10**-6,10**-5,10**-4,10**-3,10**-2,10**-1,1,10])
+    #lambda_range = np.array([10**-8,10**-7,10**-6,10**-5,10**-4,10**-3,20**-2,30**-2,40**-2,50**-2,60**-2,70**-2,80**-2,90**-2,10**-1,20**-1,30**-1,40**-1,50**-1,60**-1,70**-1,80**-1,90**-1,1,2,3,4,5,6,7,8,9,10,50,100,200,1000,10000,100000])
+    start = 10**-3
+    lambda_range = np.zeros(15)
+    for i in range(15):
+        print start
+        lambda_range[i] = start
+        start = start * (2)
     lambda_logs = np.log(lambda_range)
     square_loss_train = np.zeros(lambda_range.shape[0])
     square_loss_test = np.zeros(lambda_range.shape[0])
@@ -287,16 +307,16 @@ def visualize_bgd(X_train, X_test, y_train, y_test):
 
     for i in lambda_range:
         
-        train_theta,train_loss = regularized_grad_descent(X_train,y_train,0.01,i)
-        test_theta,test_loss = regularized_grad_descent(X_test,y_test,0.01,i)
+        train_theta,train_loss = regularized_grad_descent(X_train,y_train,0.0625,i)
+        #test_theta,test_loss = regularized_grad_descent(X_test,y_test,0.01,i)
         
         square_loss_train[k] =compute_square_loss(X_train,y_train,train_theta[X_train.shape[0]-1])
-        square_loss_test[k] = compute_square_loss(X_test,y_test,test_theta[X_test.shape[0]-1])
+        square_loss_test[k] = compute_square_loss(X_test,y_test,train_theta[X_train.shape[0]-1])
 
         k = k + 1
     
-    plt.plot(lambda_logs,square_loss_train,'r',label = 'Training Loss')
-    plt.plot(lambda_logs,square_loss_test,'g',label = 'Test Loss')
+    plt.plot(lambda_range,square_loss_train,'r',label = 'Training Loss')
+    plt.plot(lambda_range,square_loss_test,'g',label = 'Test Loss')
     legend = plt.legend(loc='upper center', shadow=True, fontsize='large')
     legend.get_frame().set_facecolor('#00FFCC')
     plt.title('square loss as a function of lambda')
@@ -378,11 +398,11 @@ def stochastic_grad_descent(X, y, alpha, lambda_reg=0.01, num_iter=100):
             plt.savefig(filename)
     
     avg_time_epoch = np.average(time_elapsed)
-    print avg_time_epoch
-    print mean
-    print std
+    #print avg_time_epoch
+    #print mean
+    #print std
     min_theta = theta_hist[np.argmin(loss_hist)/loss_hist.shape[1],np.argmin(loss_hist)%loss_hist.shape[1]]
-    print min_theta
+    #print min_theta
 
     return theta_hist,loss_hist
 ################################################
@@ -413,15 +433,19 @@ def main():
 
     grad_check = grad_checker(X_train,y_train,np.ones(X_train.shape[1]))
     
-    #visualize_bgd(X_train, X_test, y_train, y_test)
+    visualize_bgd(X_train, X_test, y_train, y_test)
     """
     theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.01)
     theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.05)
     theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.1)
     theta_hist, loss_hist = batch_grad_descent(X_train,y_train,0.5)    
     """
-    #theta_hist, loss_hist = regularized_grad_descent(X_train,y_train,0.1,0.01)
-    theta_hist_sgd, loss_hist_sgd = stochastic_grad_descent(X_train,y_train,0.05)
+    backtracking_line_search(X_train,y_train,np.ones(X_train.shape[1]))
+    theta_hist, loss_hist = regularized_grad_descent(X_train,y_train,0.01,0.01)
+    theta_hist_sgd, loss_hist_sgd = stochastic_grad_descent(X_train,y_train,0.01,0.01)
+    #print loss_hist.shape
+    #print loss_hist_sgd.shape
+
     #print theta_hist_sgd, loss_hist_sgd 
 
     #print theta_hist_sgd
