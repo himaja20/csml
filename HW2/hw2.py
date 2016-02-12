@@ -16,7 +16,7 @@ def compute_loss(X,y,theta):
 
 def coordinate_descent(X,y,lamda,w):
 	k = 0	
-	while(k <= 100):
+	while(k <= 10):
 		for j in range(D):
 			xij_factor = 0
 			for i in range(X.shape[0]):
@@ -75,6 +75,7 @@ def main():
 	## 2.1 Coordinate descent Function for 10 diffenent lambdas ranging from 10 ** -5 to 10**6
 	lasso_solutions = np.zeros((11,D))
 	sq_loss_val_set = np.zeros(11)
+	sq_loss_train = np.zeros(11)
 	lamda_range = np.zeros(11)
 	for i in range(-5,6):
 		lamda = 10**i
@@ -82,19 +83,32 @@ def main():
 		w_starting_point = np.zeros(D) #np.dot(np.dot(np.linalg.inv(np.dot(X_train.T,X_train) + lamda * np.identity(X_train.shape[1])),X.T),y_train)
 		lasso_solutions[i] = coordinate_descent(X_train,y_train,lamda,w_starting_point)
 		sq_loss_val_set[i] = compute_loss(X_validation,y_validation,lasso_solutions[i])
+		sq_loss_train[i] = compute_loss(X_train,y_train,lasso_solutions[i])
 	
 	best_lamda = lamda_range[np.argmin(sq_loss_val_set)]
+	test_lasso_sol = coordinate_descent(X_test,y_test,best_lamda,w_starting_point)
+	test_error = compute_loss(X_test,y_test,test_lasso_sol)
 	print 'lamda which minimizes square  loss on validation set is ' , best_lamda
+	print 'The corresponding test error is ' , test_error
 	plt.plot(np.log(lamda_range),sq_loss_val_set,'g',label = "Validation error Vs lamda")
-	legend = plt.legend(loc='upper center', shadow=True, fontsize='large')
-    	legend.get_frame().set_facecolor('#00FFCC')
 	plt.title('Validation square loss Vs lambda')
 	plt.xlabel('lamda')
 	plt.ylabel('square_loss')
 	plt.savefig('sq_loss_vs_lamda.png')
-	print best_lamda
 	print sq_loss_val_set		 
+	print sq_loss_train
+	plt.close()
+	##############################################################################
 
+	## 2.2 Analyze the sparsity of solution
+	print lasso_solutions[np.argmin(sq_loss_val_set)]
+	plt.ylim(-1,1)
+	plt.plot(lasso_solutions[np.argmin(sq_loss_val_set)],'r',label = "lasso solution")
+	plt.plot(theta,'g',label="true solution")
+	legend = plt.legend(loc='upper center', shadow=True, fontsize='large')
+    	legend.get_frame().set_facecolor('#00FFCC')
+	plt.title('sparsity in lasso solution Vs True solution')
+	plt.savefig('sparsity.png')	
 	
 	
 if __name__ == "__main__":
