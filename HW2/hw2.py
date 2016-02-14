@@ -45,6 +45,9 @@ def coordinate_descent(X,y,lamda,w):
 		new_loss = compute_loss(X,y,w)
 		 		
 
+#def coordinate_descent_vectorized(X,y,lamda,w):
+	
+
 def main():
 
 	X = np.random.rand(150,75)
@@ -66,7 +69,7 @@ def main():
 	epsilon = 0.1 * np.random.randn(150) + 0
 	y = np.dot(X,true_theta) + epsilon
 	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=70, random_state=42)
-	X_test,X_validation,y_test,y_validation = train_test_split(X_test, y_test, test_size=50, random_state=42)
+	X_test,X_validation,y_test,y_validation = train_test_split(X_test, y_test, test_size=20, random_state=42)
 
 	## 1.2 ridge regression experiments
 	lambda_loss = np.zeros((11,2))
@@ -128,10 +131,10 @@ def main():
 	###########################################################################
 	
 	## 2.1 Coordinate descent Function for 10 diffenent lambdas ranging from 10 ** -5 to 10**6
-	lasso_solutions = np.zeros((11,D))
-	sq_loss_val_set = np.zeros(11)
-	sq_loss_train = np.zeros(11)
-	lamda_range = np.zeros(11)
+	lasso_solutions = np.zeros((15,D))
+	sq_loss_val_set = np.zeros(15)
+	sq_loss_train = np.zeros(15)
+	lamda_range = np.zeros(15)
 	for i in range(-7,8):
 		lamda = 10**i
 		lamda_range[i] = lamda
@@ -145,7 +148,7 @@ def main():
 	test_error = compute_loss(X_test,y_test,test_lasso_sol)
 	print 'lamda which minimizes square  loss on validation set is ' , best_lamda
 	print 'The corresponding test error is ' , test_error
-	plt.plot(np.log(lamda_range),np.log(sq_loss_val_set),'g',label = "Validation error Vs lamda")
+	plt.plot(np.log(lamda_range),sq_loss_val_set,'g',label = "Validation error Vs lamda")
 	plt.title('Validation square loss Vs lambda')
 	plt.xlabel('lamda')
 	plt.ylabel('square_loss')
@@ -209,6 +212,11 @@ def main():
 
 	print 'Time taken by homotopy method is  ' , homotopy_time
 
+	###########################################################################################################################################################
+
+	#2.1.4 Vecotrized code for Shooting algorithm
+
+	
 	
 if __name__ == "__main__":
     main()
