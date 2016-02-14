@@ -46,14 +46,14 @@ def main():
 	theta_2 = np.empty(5)
 	theta_2.fill(-10)
 
-	theta = np.hstack((theta_1,theta_2))
-	np.random.shuffle(theta)
+	true_theta = np.hstack((theta_1,theta_2))
+	np.random.shuffle(true_theta)
 
 	theta_rest = np.zeros(65)
-	theta = np.hstack((theta,theta_rest))
+	true_theta = np.hstack((true_theta,theta_rest))
 
 	epsilon = 0.1 * np.random.randn(150) + 0
-	y = np.dot(X,theta) + epsilon
+	y = np.dot(X,true_theta) + epsilon
 	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=70, random_state=42)
 	X_test,X_validation,y_test,y_validation = train_test_split(X_test, y_test, test_size=50, random_state=42)
 
@@ -62,13 +62,36 @@ def main():
 	lambda_theta = np.zeros((11,D))
 	for i in range(-5,6):
 	  Lambda = 10**i;
-	  theta_opt = minimize(ridge(X_train,y_train,theta,Lambda), theta)
+	  theta_opt = minimize(ridge(X_train,y_train,np.zeros(D),Lambda), np.ones(D))
 	  lambda_loss[i] = Lambda, compute_loss(X_validation,y_validation,theta_opt.x) 
 	  lambda_theta[i] = theta_opt.x
 
 	least_loss_lambda = lambda_loss[np.argmin(lambda_loss,axis=0)[1],[0]]
 	print 'least loss' , np.amin(lambda_loss,axis=0)[1]
 	theta_learned = lambda_theta[np.argmin(lambda_loss,axis=0)[1]]
+
+	#Report on how many components with true value 0 reported as non-zero and vice-versa
+
+	plt.ylim(-1,1)
+	plt.plot(theta_learned,'r',label = "ridge solution")
+	plt.plot(true_theta,'g',label="true solution")
+	legend = plt.legend(loc='upper center', shadow=True, fontsize='large')
+    	legend.get_frame().set_facecolor('#00FFCC')
+	plt.title('Ridge solution Vs True solution')
+	plt.savefig('Ridge_solution.png')	
+	plt.close()	
+	
+	#Report after choosing a small threshold of 10**-3 and making all coefficients smaller than the threshold to zero
+
+	theta_learned[theta_learned < 10**-3] = 0
+	plt.ylim(-1,1)
+	plt.plot(theta_learned,'r',label = "ridge solution scaled")
+	plt.plot(true_theta,'g',label="true solution")
+	legend = plt.legend(loc='upper center', shadow=True, fontsize='large')
+    	legend.get_frame().set_facecolor('#00FFCC')
+	plt.title('Ridge scaled solution Vs True solution')
+	plt.savefig('Ridge_scaled_solution.png')	
+	plt.close()	
 	
 	###########################################################################
 	
@@ -104,7 +127,7 @@ def main():
 	print lasso_solutions[np.argmin(sq_loss_val_set)]
 	plt.ylim(-1,1)
 	plt.plot(lasso_solutions[np.argmin(sq_loss_val_set)],'r',label = "lasso solution")
-	plt.plot(theta,'g',label="true solution")
+	plt.plot(true_theta,'g',label="true solution")
 	legend = plt.legend(loc='upper center', shadow=True, fontsize='large')
     	legend.get_frame().set_facecolor('#00FFCC')
 	plt.title('sparsity in lasso solution Vs True solution')
