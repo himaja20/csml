@@ -7,6 +7,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import time
+import math
 
 
 def ridge(X,y,theta,Lambda):
@@ -18,9 +19,15 @@ def compute_loss(X,y,theta):
 	return ((np.linalg.norm(np.dot(X,theta) - y))**2)/(2*N)
 
 def coordinate_descent(X,y,lamda,w):
-	k = 0
 	print 'lamda in coordinte descent function  ' , lamda	
-	while(k <= 10):
+	loss = float("inf")
+	new_loss = 0
+	while(True):
+		if (loss - new_loss < 10**-3):
+			return w
+			break
+		else:
+			loss = new_loss	
 		for j in range(D):
 			xij_factor = 0
 			for i in range(X.shape[0]):
@@ -34,8 +41,8 @@ def coordinate_descent(X,y,lamda,w):
 				w[j] = 1/aj*(cj + lamda)
 			elif (-lamda <= cj <= lamda):
 				w[j] = 0
-		k = k +1
-	return w
+			
+		new_loss = compute_loss(X,y,w)
 		 		
 
 def main():
