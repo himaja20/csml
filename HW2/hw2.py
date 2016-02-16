@@ -3,6 +3,7 @@ from scipy.optimize import minimize
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import Ridge
+from numpy.random import RandomState
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -19,35 +20,72 @@ def compute_loss(X,y,theta):
 	return ((np.linalg.norm(np.dot(X,theta) - y))**2)/(2*N)
 
 def coordinate_descent(X,y,lamda,w):
+	max_iter = 10000
 	print 'lamda in coordinte descent function  ' , lamda	
-	loss = float("inf")
-	new_loss = 0
-	while(True):
-		if (loss - new_loss < 10**-3):
-			return w
-			break
-		else:
-			loss = new_loss	
+	iter = 0
+	converged = False
+	cjval = np.zeros(D)
+	XX2 = np.dot(X.T,X)*2
+	Xy2 = np.dot(X.T,y)*2;
+	while((not converged) and (iter < max_iter)):
+		w_old = w
 		for j in range(D):
 			xij_factor = 0
+			cj_factor = 0
 			for i in range(X.shape[0]):
 				xij_factor = X[i][j]**2 + xij_factor
-				cj_factor = X[i][j] *(y[i] - np.dot(w.T,X[i]) + w[j]*X[i][j])
+				cj_factor = cj_factor + (X[i][j]*(y[i] - np.dot(w.T,X[i]) + w[j]*X[i][j]))
+
 			aj = 2*xij_factor
 			cj = 2*cj_factor
+			
+			aj_vec = XX2[j][j]
+			cj_vec = 2 * np.sum(np.multiply(X[:,j],(y-np.dot(X,w.T)+w[j]*X[:,j]))) 
+			
+			if( ((aj - aj_vec) != 0) or ((cj - cj_vec) != 0)):
+				print "iteration " , j
+				print "---------------------"
+				print aj, "    " ,aj_vec, " ", aj-aj_vec
+				print cj, "    " , cj_vec, " ", cj - cj_vec
+
+
 			if (cj > lamda):
 				w[j] = 1/aj*(cj - lamda)
 			elif (cj < -lamda):
 				w[j] = 1/aj*(cj + lamda)
-			elif (-lamda <= cj <= lamda):
+			else: 
 				w[j] = 0
+			iter = iter + 1
+		
+		converged = np.linalg.norm(np.absolute(w - w_old)) < 10 ** -3
+		#converged = abs(compute_loss(X,y,w) - compute_loss(X,y,w_old)) < 10 ** -3
+	return w	
+
+def coordinate_descent_vectorized(X,y,lamda,w):
+	max_iter = 10000
+	print 'lamda in coordinte descent function  ' , lamda	
+	iter = 0
+	XX2 = np.dot(X.T,X)*2
+	Xy2 = np.dot(X.T,y)*2;
+	converged = False
+	cjval = np.zeros(D)
+	while((not converged) and (iter < max_iter)):
+		w_old = w
+		for j in range(D):
+			aj = XX2[j][j]
+			cj = Xy2[j] - np.sum(np.multiply(X[:,j],np.dot(X,w.T))) + XX2[j][j]*w[j]
+			cjval[j] = cj
+			if (cj > lamda):
+				w[j] = 1/aj*(cj - lamda)
+			elif (cj < -lamda):
+				w[j] = 1/aj*(cj + lamda)
+			else: 
+				w[j] = 0
+			iter = iter + 1
 			
-		new_loss = compute_loss(X,y,w)
-		 		
-
-#def coordinate_descent_vectorized(X,y,lamda,w):
-	
-
+		#converged = np.linalg.norm(np.absolute(w - w_old)) < 10 ** -3
+		converged = abs(compute_loss(X,y,w) - compute_loss(X,y,w_old)) < 10 ** -3
+	print "vectorixed"  , cjval
 def main():
 
 	X = np.random.rand(150,75)
@@ -68,8 +106,13 @@ def main():
 
 	epsilon = 0.1 * np.random.randn(150) + 0
 	y = np.dot(X,true_theta) + epsilon
-	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=70, random_state=42)
-	X_test,X_validation,y_test,y_validation = train_test_split(X_test, y_test, test_size=20, random_state=42)
+
+
+	#np.random.seed(19910420)
+	randState = RandomState(19910420)
+
+	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=70, random_state=randState)
+	X_test,X_validation,y_test,y_validation = train_test_split(X_test, y_test, test_size=20, random_state=randState)
 
 	## 1.2 ridge regression experiments
 	lambda_loss = np.zeros((11,2))
@@ -138,7 +181,7 @@ def main():
 	for i in range(-7,8):
 		lamda = 10**i
 		lamda_range[i] = lamda
-		w_starting_point =  theta_learned#np.dot(np.dot(np.linalg.inv(np.dot(X_train.T,X_train) + lamda * np.identity(X_train.shape[1])),X_train.T),y_train)#np.zeros(D)
+		w_starting_point =  np.zeros(D)#theta_learned#np.dot(np.dot(np.linalg.inv(np.dot(X_train.T,X_train) + lamda * np.identity(X_train.shape[1])),X_train.T),y_train)#np.zeros(D)
 		lasso_solutions[i] = coordinate_descent(X_train,y_train,lamda,w_starting_point)
 		sq_loss_val_set[i] = compute_loss(X_validation,y_validation,lasso_solutions[i])
 		sq_loss_train[i] = compute_loss(X_train,y_train,lasso_solutions[i])
@@ -172,42 +215,32 @@ def main():
 
 	## 2.3 homotopy Method Vs Basic Shooting Algorithm
 	lamda_max = 2 * np.linalg.norm(np.dot(X_train.T,y_train))
-	i = 0
-	w_starting_point = np.zeros(D)
-	lamda_len = 0
 	lamda = lamda_max
-	while(lamda >= 10 ** -5):
-		lamda_len = lamda_len + 1
-		lamda = lamda / 2
-	w = np.zeros((lamda_len,D))
 	
 	#Run time for Basic Shooting Algorithm
-	w_starting_point = np.zeros(D)
-	i = 0
 	lamda = lamda_max
-	start_time = time.clock()
 	shooting_time = 0
 	while(lamda >= 10 ** -5):
-		start_time = time.clock()
-		w[i] = coordinate_descent(X_train,y_train,lamda,w_starting_point)
-		end_time = time.clock()
+		w = np.zeros(D)
+		start_time = time.time()
+		w = coordinate_descent(X_train,y_train,lamda,w)
+		end_time = time.time()
 
 		shooting_time = shooting_time + (end_time - start_time)
 
-		lamda = float(lamda) / 10
-		i = i + 1
+		lamda = float(lamda) / 2
 	print 'Time taken by shooting algorithm  ', shooting_time
 	#Run-time for homotopy method
 	lamda = lamda_max
 	homotopy_time = 0
+	w = np.zeros(D)
 	while(lamda >= 10 ** -5):
-		start_time = time.clock()
-		w[i] = coordinate_descent(X_train,y_train,lamda,w_starting_point)
-		end_time = time.clock()
+		start_time = time.time()
+		w = coordinate_descent(X_train,y_train,lamda,w)
+		end_time = time.time()
 		
 		homotopy_time = homotopy_time + (end_time - start_time)
-		w_starting_point = w[i]
-		lamda = float(lamda) / 10
+		lamda = float(lamda) / 2
 		i = i + 1
 
 	print 'Time taken by homotopy method is  ' , homotopy_time
@@ -215,8 +248,12 @@ def main():
 	###########################################################################################################################################################
 
 	#2.1.4 Vecotrized code for Shooting algorithm
+	coordinate_descent(X_train,y_train,0.01,np.zeros(D))
+	coordinate_descent_vectorized(X_train,y_train,0.01,np.zeros(D))
+	X= np.arange(8).reshape(4,2)
+	y = np.ones(4)
 
-	
+
 	
 if __name__ == "__main__":
     main()
