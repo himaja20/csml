@@ -47,9 +47,13 @@ def shuffle_data():
     '''
     pos_path = "./data/pos"
     neg_path = "./data/neg"
-	
     pos_review = folder_list(pos_path,1)
+   # pos_labels = np.ones(len(pos_review))
+    
     neg_review = folder_list(neg_path,-1)
+    #neg_labels = np.ones(len(neg_review)) * (-1)
+	
+   # labels = np.concatenate((pos_labels,neg_labels))
 	
     review = pos_review + neg_review
     random.shuffle(review)
