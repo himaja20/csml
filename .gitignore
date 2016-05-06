@@ -1,2 +1,13 @@
+
+HW3/data/
+HW3/stopwords
+HW3/stopwords1
+HW3/tut.h5
+mlcs-project/
+*.pyc
+*.ipynb_checkpoints
+*.png
+*.p
+*.csv
 venv
 *.swp
